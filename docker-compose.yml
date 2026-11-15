@@ -2,24 +2,20 @@ name: game-studio
 
 x-php-service: &php-service
   env_file: .env
-  networks:
-    - backend
+  networks: [backend]
   restart: unless-stopped
 
 services:
   gateway:
     image: nginx:1.27-alpine
-    ports:
-      - "8080:80"
-    volumes:
-      - ./gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports: ["8080:80"]
+    volumes: ["./gateway:/etc/nginx/conf.d:ro"]
     depends_on:
       - developer-service
       - team-service
       - game-service
       - sales-service
-    networks:
-      - backend
+    networks: [backend]
 
   developer-service:
     <<: *php-service
@@ -27,10 +23,9 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
       target: dev
-    args:
-      SERVICE: developer-service
-    ports:
-      - "8001:80"
+      args:
+        SERVICE: developer-service
+    ports: ["8001:80"]
     volumes:
       - ./services/developer-service:/app/services/developer-service
       - ./shared:/app/shared
@@ -49,10 +44,9 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
       target: dev
-    args:
-      SERVICE: team-service
-    ports:
-      - "8002:80"
+      args:
+        SERVICE: team-service
+    ports: ["8002:80"]
     volumes:
       - ./services/team-service:/app/services/team-service
       - ./shared:/app/shared
@@ -71,10 +65,9 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
       target: dev
-    args:
-      SERVICE: game-service
-    ports:
-      - "8003:80"
+      args:
+        SERVICE: game-service
+    ports: ["8003:80"]
     volumes:
       - ./services/game-service:/app/services/game-service
       - ./shared:/app/shared
@@ -93,10 +86,9 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
       target: dev
-    args:
-      SERVICE: sales-service
-    ports:
-      - "8004:80"
+      args:
+        SERVICE: sales-service
+    ports: ["8004:80"]
     volumes:
       - ./services/sales-service:/app/services/sales-service
       - ./shared:/app/shared
@@ -117,24 +109,19 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
-    networks:
-      - backend
+    networks: [backend]
 
   phpmyadmin:
     image: phpmyadmin:5
-    ports:
-      - "8081:80"
+    ports: ["8081:80"]
     environment:
       PMA_HOST: mariadb
-    depends_on:
-      - mariadb
-    networks:
-      - backend
+    depends_on: [mariadb]
+    networks: [backend]
 
   redis:
     image: redis:7-alpine
-    networks:
-      - backend
+    networks: [backend]
 
 networks:
   backend:
