@@ -23,9 +23,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app/services/${SERVICE}
 
+# development image: code is mounted as a volume, composer available
 FROM base AS dev
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
+# production build: install dependencies without dev tools
 FROM composer:2 AS vendor
 ARG SERVICE
 COPY shared /app/shared
@@ -33,6 +35,7 @@ COPY services/${SERVICE} /app/services/${SERVICE}
 WORKDIR /app/services/${SERVICE}
 RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
+# production image: immutable, no volumes needed
 FROM base AS prod
 ARG SERVICE
 COPY --from=vendor /app /app
