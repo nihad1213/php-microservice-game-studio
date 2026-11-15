@@ -1,2 +1,145 @@
+name: game-studio
+
+x-php-service: &php-service
+  env_file: .env
+  networks:
+    - backend
+  restart: unless-stopped
+
 services:
-  
+  gateway:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - developer-service
+      - team-service
+      - game-service
+      - sales-service
+    networks:
+      - backend
+
+  developer-service:
+    <<: *php-service
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: dev
+    args:
+      SERVICE: developer-service
+    ports:
+      - "8001:80"
+    volumes:
+      - ./services/developer-service:/app/services/developer-service
+      - ./shared:/app/shared
+    environment:
+      DB_HOST: mariadb
+      DB_NAME: developer_db
+      DB_USER: developer_svc
+      DB_PASS: ${DEVELOPER_DB_PASS}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  team-service:
+    <<: *php-service
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: dev
+    args:
+      SERVICE: team-service
+    ports:
+      - "8002:80"
+    volumes:
+      - ./services/team-service:/app/services/team-service
+      - ./shared:/app/shared
+    environment:
+      DB_HOST: mariadb
+      DB_NAME: team_db
+      DB_USER: team_svc
+      DB_PASS: ${TEAM_DB_PASS}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  game-service:
+    <<: *php-service
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: dev
+    args:
+      SERVICE: game-service
+    ports:
+      - "8003:80"
+    volumes:
+      - ./services/game-service:/app/services/game-service
+      - ./shared:/app/shared
+    environment:
+      DB_HOST: mariadb
+      DB_NAME: game_db
+      DB_USER: game_svc
+      DB_PASS: ${GAME_DB_PASS}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  sales-service:
+    <<: *php-service
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: dev
+    args:
+      SERVICE: sales-service
+    ports:
+      - "8004:80"
+    volumes:
+      - ./services/sales-service:/app/services/sales-service
+      - ./shared:/app/shared
+      - sales_data:/app/services/sales-service/storage
+    environment:
+      SQLITE_PATH: /app/services/sales-service/storage/sales.sqlite
+      GAME_SERVICE_URL: http://game-service
+
+  mariadb:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./docker/mariadb/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - backend
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mariadb
+    depends_on:
+      - mariadb
+    networks:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  sales_data:
