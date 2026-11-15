@@ -1,1 +1,1 @@
-Dockerfile
+# syntax=docker/dockerfile:1
