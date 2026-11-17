@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Studio\Core;
+namespace Studio\Core\Http;
 
 final readonly class JsonResponder
 {
