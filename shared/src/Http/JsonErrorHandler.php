@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Shared\Src\Http;
+namespace Studio\Core\Http;
 
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;

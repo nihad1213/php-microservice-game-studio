@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Shared\Src\Http;
+namespace Studio\Core\Http;
 
 final readonly class CorrelationIdMiddleware
 {
-    
+
 }
