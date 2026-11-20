@@ -13,9 +13,10 @@ final readonly class JsonResponder
         return $this->json($response, $data, $status);
     }
 
-    public function created(ResponseInterface $response, array $data = []): ResponseInterface
+    public function created(ResponseInterface $response, array $data = [], ?string $location = null): ResponseInterface
     {
-        return $this->json($response, $data, 201);
+        $response = $this->json($response, $data, 201);
+        return $location ? $response->withHeader('Location', $location) : $response;
     }
 
     public function noContent(ResponseInterface $response): ResponseInterface {
