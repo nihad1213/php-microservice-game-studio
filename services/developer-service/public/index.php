@@ -19,12 +19,14 @@ if (getenv('APP_ENV') === 'production') {
 $container = $builder->build();
 
 $app = Bridge::create($container);
-$app->add(CorrelationIdMiddleware::class);
-$app->addBodyParsingMiddleware();
+
 $app->addRoutingMiddleware();
+$app->addBodyParsingMiddleware();
 
 $errors = $app->addErrorMiddleware(getenv('APP_ENV') !== 'production', true, true);
 $errors->setDefaultErrorHandler($container->get(JsonErrorHandler::class));
+
+$app->add(CorrelationIdMiddleware::class);
 
 (require __DIR__ . '/../config/routes.php')($app);
 $app->run();
