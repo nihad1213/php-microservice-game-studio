@@ -12,42 +12,11 @@ use Psr\Log\LoggerInterface;
 
 final class LoggerFactory
 {
-    public static function create(string $serviceName): LoggerInterface
+    public static function create(string $service): LoggerInterface
     {
-        $logger = new Logger($serviceName);
+        $handler = new StreamHandler('php://stdout', Level::Info);
+        $handler->setFormatter(new JsonFormatter());
 
-        $handler = new StreamHandler(
-            'php://stdout',
-            self::getLogLevel()
-        );
-
-        $handler->setFormatter(
-            new JsonFormatter(
-                JsonFormatter::BATCH_MODE_JSON,
-                true
-            )
-        );
-
-        $logger->pushHandler($handler);
-
-        $logger->pushProcessor(
-            static function ($record) use ($serviceName) {
-                return $record->with(
-                    extra: array_merge(
-                        $record->extra,
-                        ['service' => $serviceName]
-                    )
-                );
-            }
-        );
-
-        return $logger;
-    }
-
-    private static function getLogLevel(): Level
-    {
-        $level = getenv('LOG_LEVEL') ?: 'info';
-
-        return Level::fromName(strtoupper($level));
+        return new Logger($service, [$handler]);
     }
 }
