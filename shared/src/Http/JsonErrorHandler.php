@@ -18,11 +18,16 @@ final readonly class JsonErrorHandler
         private LoggerInterface $logger,
     ) {}
 
-    public function __invoke(ServerRequestInterface $request, Throwable $exception, bool $displayErrorDetails,
+    public function __invoke(
+        ServerRequestInterface $request,
+        Throwable $exception,
+        bool $displayErrorDetails,
         bool $logErrors,
         bool $logErrorDetails
     ): ResponseInterface {
         $status = $this->getStatusCode($exception);
+
+        $safe = $exception instanceof ProblemException && $status < 500;
 
         $correlationId = $request->getHeaderLine('X-Correlation-Id');
 
@@ -40,11 +45,15 @@ final readonly class JsonErrorHandler
             'type' => 'about:blank',
             'title' => $this->getTitle($status),
             'status' => $status,
-            'detail' => $displayErrorDetails
+            'detail' => ($displayErrorDetails || $safe)
                 ? $exception->getMessage()
                 : 'An error occurred while processing the request.',
             'instance' => $request->getUri()->getPath(),
         ];
+
+        if ($exception instanceof ProblemException && $exception->getErrors() !== []) {
+            $problem['errors'] = $exception->getErrors();
+        }
 
         $response = $this->responseFactory->createResponse($status);
 
@@ -72,6 +81,10 @@ final readonly class JsonErrorHandler
 
     private function getStatusCode(Throwable $exception): int
     {
+        if ($exception instanceof ProblemException) {
+            return $exception->getStatus();
+        }
+
         if ($exception instanceof HttpException) {
             $status = $exception->getCode();
 
