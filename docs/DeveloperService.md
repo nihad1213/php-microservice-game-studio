@@ -1,6 +1,6 @@
 # Developer Service
 
-This document describes the **developer-service** of Game Studio: what it owns, how it is structured, its HTTP API, its database, and how to run, test and extend it.
+This document describes the **developer-service** of Game Studio: what it owns, how it is structured, its HTTP API, its database, and how to run and extend it.
 
 For the Docker, gateway, MariaDB and phpMyAdmin setup, see the Docker configuration document. This file covers only what belongs to this service.
 
@@ -36,12 +36,11 @@ services/developer-service/
 |-- db/
 |   |-- migrations/                # schema changes (Phinx)
 |   `-- seeds/DeveloperSeeder.php  # 30 fake developers for development
-|-- src/
-|   |-- Domain/                    # business concepts, no framework code
-|   |-- Application/               # use cases and input validation
-|   |-- Infrastructure/            # PDO repository
-|   `-- Http/                      # controllers
-`-- tests/                         # PHPUnit tests (see section 11)
+`-- src/
+    |-- Domain/                    # business concepts, no framework code
+    |-- Application/               # use cases and input validation
+    |-- Infrastructure/            # PDO repository
+    `-- Http/                      # controllers
 ```
 
 Shared technical code (JSON responses, error handler, correlation id middleware, logger factory) lives outside the service in `shared/src` and is installed as the Composer package `studio/core`.
@@ -57,7 +56,7 @@ Each layer only depends on the layers below it. The domain layer knows nothing a
 | Domain | `Developer`, `Role`, `DeveloperRepository`, `DeveloperNotFound`, `EmailAlreadyUsed` | Entity, allowed roles, repository contract, business errors |
 | Infrastructure | `PdoDeveloperRepository` | SQL access to `developer_db` through PDO |
 
-The repository is an interface in the domain layer. `config/container.php` binds it to the PDO implementation, so tests can replace it with a fake and a different storage engine could be used without touching the use cases.
+The repository is an interface in the domain layer. `config/container.php` binds it to the PDO implementation, so a different storage engine could be used without touching the use cases.
 
 ## 4. Data model
 
@@ -271,24 +270,7 @@ The `/health` route is available on port 8001. The gateway only forwards `/api/v
 - **E-mail is normalised** to lowercase and trimmed before it is stored.
 - **Full-replacement `PUT`.** Partial updates (`PATCH`) are intentionally not offered yet.
 
-## 11. Testing
-
-Tests belong in `services/developer-service/tests/` and run with PHPUnit:
-
-```bash
-docker compose exec developer-service vendor/bin/phpunit
-```
-
-Planned test coverage for this service:
-
-| Level | What to test |
-|---|---|
-| Unit | `DeveloperInput` validation (valid data, each invalid field, trimming, lowercase e-mail) |
-| Unit | `DeveloperService` with a fake `DeveloperRepository` (not found, create, update, delete) |
-| Integration | `PdoDeveloperRepository` against a test database (insert, find, filter by role, duplicate e-mail) |
-| HTTP | Status codes 200, 201, 204, 404, 409 and 422 through the Slim application |
-
-## 12. Known limitations and planned work
+## 11. Known limitations and planned work
 
 - **No authentication yet.** All endpoints are open. JWT authentication and an admin / reader role split are planned in the security task.
 - **No `/ready` endpoint.** `/health` only shows that the process is alive; it does not check the database.
@@ -297,7 +279,7 @@ Planned test coverage for this service:
 - **No `PATCH`, sorting or text search** on the list endpoint.
 - **No OpenAPI file yet.** The API contract in this document is the reference until one is added to `docs/openapi/`.
 
-## 13. Checklist
+## 12. Checklist
 
 - [ ] `developer_db` exists and the `developer_svc` password matches `.env`.
 - [ ] `composer install` has been run and the `App\` namespace autoloads from `src/`.
@@ -306,4 +288,3 @@ Planned test coverage for this service:
 - [ ] A duplicate e-mail returns 409 and invalid input returns 422 with field errors.
 - [ ] An unknown id returns 404 as `application/problem+json`.
 - [ ] Error responses contain the `X-Correlation-Id` header.
-- [ ] PHPUnit tests exist for validation, the service and the repository.
