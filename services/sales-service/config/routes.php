@@ -1,16 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
+use App\Http\HealthController;
+use App\Http\SalesController;
 use Slim\App;
 use Slim\Routing\RouteCollectorProxy as Group;
-use App\Http\{DeveloperController, HealthController};
 
 return function (App $app): void {
     $app->get('/health', HealthController::class);
-    // $app->group('/api/v1/developers', function (Group $g) {
-    //     $g->get('', [DeveloperController::class, 'list']);
-    //     $g->post('', [DeveloperController::class, 'create']);
-    //     $g->get('/{id:[0-9]+}', [DeveloperController::class, 'get']);
-    //     $g->put('/{id:[0-9]+}', [DeveloperController::class, 'update']);
-    //     $g->delete('/{id:[0-9]+}', [DeveloperController::class, 'delete']);
-    // });
+
+    $app->group('/api/v1/sales', function (Group $g) {
+        $g->get('', [SalesController::class, 'list']);
+        $g->post('', [SalesController::class, 'create']);
+        $g->post('/batch', [SalesController::class, 'batch']);
+
+        $g->get('/reports/by-game', [SalesController::class, 'reportByGame']);
+        $g->get('/reports/by-region', [SalesController::class, 'reportByRegion']);
+        $g->get('/reports/monthly', [SalesController::class, 'reportMonthly']);
+
+        $g->get('/{id:[0-9]+}', [SalesController::class, 'get']);
+    });
 };
