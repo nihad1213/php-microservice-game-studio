@@ -55,6 +55,7 @@ services:
       DB_NAME: team_db
       DB_USER: team_svc
       DB_PASS: ${TEAM_DB_PASS}
+      DEVELOPER_SERVICE_URL: http://developer-service
     depends_on:
       mariadb:
         condition: service_healthy
@@ -76,6 +77,7 @@ services:
       DB_NAME: game_db
       DB_USER: game_svc
       DB_PASS: ${GAME_DB_PASS}
+      TEAM_SERVICE_URL: http://team-service
     depends_on:
       mariadb:
         condition: service_healthy
@@ -96,6 +98,7 @@ services:
     environment:
       SQLITE_PATH: /app/services/sales-service/storage/sales.sqlite
       GAME_SERVICE_URL: http://game-service
+      REDIS_HOST: redis
 
   mariadb:
     image: mariadb:11
