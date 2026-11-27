@@ -1,0 +1,2212 @@
+{
+  "info": {
+    "name": "Game Studio Platform",
+    "description": "Requests for all four services (developer, team, game, sales) through the nginx gateway.\n\nStart the stack with `docker compose up -d`, migrate and seed every service, then use '00 - End-to-end scenario' or the per-service folders. Each service folder is meant to run top to bottom; create requests save ids into collection variables with a short script.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 - End-to-end scenario (run this folder in order)",
+      "item": [
+        {
+          "name": "1. Create developer (lead)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/developers",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "developers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Grace\",\n  \"last_name\": \"Hopper\",\n  \"email\": \"grace.{{$timestamp}}@studio.test\",\n  \"role\": \"programmer\",\n  \"hired_at\": \"2026-03-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('s_leadId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Create developer (member)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/developers",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "developers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Linus\",\n  \"last_name\": \"Pauling\",\n  \"email\": \"linus.{{$timestamp}}@studio.test\",\n  \"role\": \"designer\",\n  \"hired_at\": \"2026-03-02\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('s_memberId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Create team with the first developer as lead",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nova Studio {{$timestamp}}\",\n  \"description\": \"RPG team\",\n  \"lead_developer_id\": {{s_leadId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "team-service calls developer-service to check the lead."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('s_teamId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Add the second developer to the team",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams/{{s_teamId}}/members",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{s_teamId}}",
+                "members"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"developer_id\": {{s_memberId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "5. Show team members with developer data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams/{{s_teamId}}/members?expand=developers",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{s_teamId}}",
+                "members"
+              ],
+              "query": [
+                {
+                  "key": "expand",
+                  "value": "developers"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6. Create game for the team",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Star Forge {{$timestamp}}\",\n  \"genre\": \"rpg\",\n  \"platform\": \"pc\",\n  \"price_cents\": 3999,\n  \"team_id\": {{s_teamId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "game-service calls team-service to check the team."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('s_gameId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7. Try to sell the game before release (expect 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"game_id\": {{s_gameId}},\n  \"units\": 1,\n  \"unit_price_cents\": 3999,\n  \"region\": \"europe\",\n  \"platform\": \"pc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "8. Release the game",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games/{{s_gameId}}/release",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "{{s_gameId}}",
+                "release"
+              ]
+            },
+            "description": "Look for game.released in: docker compose logs game-service"
+          }
+        },
+        {
+          "name": "9. Record a sale",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"game_id\": {{s_gameId}},\n  \"units\": 2,\n  \"unit_price_cents\": 3999,\n  \"region\": \"europe\",\n  \"platform\": \"pc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "sales-service calls game-service (and caches the answer in Redis)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('s_saleId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10. Record a batch of sales",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales/batch",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales",
+                "batch"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"game_id\": {{s_gameId}},\n      \"units\": 1,\n      \"unit_price_cents\": 3999,\n      \"region\": \"asia\",\n      \"platform\": \"pc\"\n    },\n    {\n      \"game_id\": {{s_gameId}},\n      \"units\": 4,\n      \"unit_price_cents\": 3999,\n      \"region\": \"north_america\",\n      \"platform\": \"pc\"\n    },\n    {\n      \"game_id\": {{s_gameId}},\n      \"units\": 2,\n      \"unit_price_cents\": 3599,\n      \"currency\": \"EUR\",\n      \"region\": \"europe\",\n      \"platform\": \"pc\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "11. Revenue by region for the new game",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales/reports/by-region?game_id={{s_gameId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales",
+                "reports",
+                "by-region"
+              ],
+              "query": [
+                {
+                  "key": "game_id",
+                  "value": "{{s_gameId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "12. Revenue by month for the new game",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales/reports/monthly?game_id={{s_gameId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales",
+                "reports",
+                "monthly"
+              ],
+              "query": [
+                {
+                  "key": "game_id",
+                  "value": "{{s_gameId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "13. Retire the game",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games/{{s_gameId}}/retire",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "{{s_gameId}}",
+                "retire"
+              ]
+            }
+          }
+        }
+      ],
+      "description": "Creates a developer, a team, a game and sales, and uses data from each step in the next one. Needs all four services, MariaDB and Redis running. Open the Collection Runner and run this folder from top to bottom."
+    },
+    {
+      "name": "Developer service",
+      "item": [
+        {
+          "name": "List developers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/developers?page=1&per_page=10",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "developers"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List developers (filter by role)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/developers?role=designer&per_page=5",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "developers"
+              ],
+              "query": [
+                {
+                  "key": "role",
+                  "value": "designer"
+                },
+                {
+                  "key": "per_page",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List developers (invalid role, expect 422)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/developers?role=wizard",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "developers"
+              ],
+              "query": [
+                {
+                  "key": "role",
+                  "value": "wizard"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create developer (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/developers",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "developers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Ada\",\n  \"last_name\": \"Lovelace\",\n  \"email\": \"ada.{{$timestamp}}@studio.test\",\n  \"role\": \"programmer\",\n  \"hired_at\": \"2026-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Saves the new id as createdDeveloperId. The e-mail contains a timestamp so it is unique."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const d = pm.response.json();",
+                  "    pm.collectionVariables.set('createdDeveloperId', d.id);",
+                  "    pm.collectionVariables.set('createdDeveloperEmail', d.email);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create developer (invalid, expect 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/developers",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "developers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"\",\n  \"email\": \"nope\",\n  \"role\": \"wizard\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create developer (duplicate e-mail, expect 409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/developers",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "developers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Ada\",\n  \"last_name\": \"Copy\",\n  \"email\": \"{{createdDeveloperEmail}}\",\n  \"role\": \"qa\",\n  \"hired_at\": \"2026-02-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Reuses the e-mail of the developer created above, so the database rejects it."
+          }
+        },
+        {
+          "name": "Get developer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/developers/{{createdDeveloperId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "developers",
+                "{{createdDeveloperId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get developer (unknown id, expect 404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/developers/99999",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "developers",
+                "99999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update developer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/developers/{{createdDeveloperId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "developers",
+                "{{createdDeveloperId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Ada\",\n  \"last_name\": \"Byron\",\n  \"email\": \"ada.updated.{{$timestamp}}@studio.test\",\n  \"role\": \"producer\",\n  \"hired_at\": \"2026-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "PUT replaces all fields, so every field is required."
+          }
+        },
+        {
+          "name": "Delete developer (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/developers/{{createdDeveloperId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "developers",
+                "{{createdDeveloperId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Team service",
+      "item": [
+        {
+          "name": "List teams",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams?page=1&per_page=10",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create team with lead (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Orbit Labs {{$timestamp}}\",\n  \"description\": \"Space games\",\n  \"lead_developer_id\": {{developerId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Needs developer {{developerId}} (default 1) to exist in developer-service. The lead becomes a member automatically. Saves the new id as createdTeamId."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('createdTeamId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create team (unknown lead, expect 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ghost Team {{$timestamp}}\",\n  \"lead_developer_id\": 99999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create team (invalid, expect 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"lead_developer_id\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get team",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams/{{createdTeamId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{createdTeamId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get team (unknown id, expect 404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams/99999",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "99999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update team",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams/{{createdTeamId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{createdTeamId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Orbit Labs Updated {{$timestamp}}\",\n  \"description\": \"Space and sci-fi\",\n  \"lead_developer_id\": {{developerId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams/{{createdTeamId}}/members",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{createdTeamId}}",
+                "members"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add member (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams/{{createdTeamId}}/members",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{createdTeamId}}",
+                "members"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"developer_id\": {{memberDeveloperId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Needs developer {{memberDeveloperId}} (default 3) to exist in developer-service."
+          }
+        },
+        {
+          "name": "Add member again (expect 409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams/{{createdTeamId}}/members",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{createdTeamId}}",
+                "members"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"developer_id\": {{memberDeveloperId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Add unknown developer (expect 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams/{{createdTeamId}}/members",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{createdTeamId}}",
+                "members"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"developer_id\": 99999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List members with developer data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams/{{createdTeamId}}/members?expand=developers",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{createdTeamId}}",
+                "members"
+              ],
+              "query": [
+                {
+                  "key": "expand",
+                  "value": "developers"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remove member (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams/{{createdTeamId}}/members/{{memberDeveloperId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{createdTeamId}}",
+                "members",
+                "{{memberDeveloperId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remove the team lead (expect 409)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams/{{createdTeamId}}/members/{{developerId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{createdTeamId}}",
+                "members",
+                "{{developerId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete team (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/teams/{{createdTeamId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{createdTeamId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Game service",
+      "item": [
+        {
+          "name": "List games",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games?page=1&per_page=10",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List games (filters)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games?status=released&platform=pc&team_id=1",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "released"
+                },
+                {
+                  "key": "platform",
+                  "value": "pc"
+                },
+                {
+                  "key": "team_id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List games (invalid status, expect 422)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games?status=unknown",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "unknown"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create game (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Moon Harbor {{$timestamp}}\",\n  \"genre\": \"Adventure\",\n  \"platform\": \"pc\",\n  \"price_cents\": 2999,\n  \"team_id\": {{teamId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Needs team {{teamId}} (default 1) to exist in team-service. Saves the new id as createdGameId."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('createdGameId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create game (invalid, expect 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"\",\n  \"platform\": \"atari\",\n  \"price_cents\": \"free\",\n  \"team_id\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create game (unknown team, expect 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Ghost Game {{$timestamp}}\",\n  \"genre\": \"rpg\",\n  \"platform\": \"pc\",\n  \"price_cents\": 1999,\n  \"team_id\": 99999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get game",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games/{{createdGameId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "{{createdGameId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get game (unknown id, expect 404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games/99999",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "99999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update game",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games/{{createdGameId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "{{createdGameId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Moon Harbor Remastered {{$timestamp}}\",\n  \"genre\": \"adventure\",\n  \"platform\": \"pc\",\n  \"price_cents\": 3499,\n  \"team_id\": {{teamId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Status cannot be set here. It only changes through release and retire."
+          }
+        },
+        {
+          "name": "Release game (200)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games/{{createdGameId}}/release",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "{{createdGameId}}",
+                "release"
+              ]
+            },
+            "description": "in_development -> released. Publishes game.released (look for it in the game-service log)."
+          }
+        },
+        {
+          "name": "Release game again (expect 409)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games/{{createdGameId}}/release",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "{{createdGameId}}",
+                "release"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete released game (expect 409)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games/{{createdGameId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "{{createdGameId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Retire game (200)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games/{{createdGameId}}/retire",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "{{createdGameId}}",
+                "retire"
+              ]
+            },
+            "description": "released -> retired. Publishes game.retired."
+          }
+        },
+        {
+          "name": "Update retired game (expect 409)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games/{{createdGameId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "{{createdGameId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Too Late\",\n  \"genre\": \"adventure\",\n  \"platform\": \"pc\",\n  \"price_cents\": 1,\n  \"team_id\": {{teamId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create draft game (to delete)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Draft {{$timestamp}}\",\n  \"genre\": \"puzzle\",\n  \"platform\": \"mobile\",\n  \"price_cents\": 499,\n  \"team_id\": {{teamId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Saves the id as draftGameId."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('draftGameId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete draft game (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/games/{{draftGameId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "games",
+                "{{draftGameId}}"
+              ]
+            },
+            "description": "Only games in development can be deleted."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sales service",
+      "item": [
+        {
+          "name": "Record sale (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"game_id\": {{releasedGameId}},\n  \"units\": 2,\n  \"unit_price_cents\": 3999,\n  \"currency\": \"USD\",\n  \"region\": \"europe\",\n  \"platform\": \"pc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Needs a released game. {{releasedGameId}} defaults to 1 (released in the seed data). Saves the id as createdSaleId."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('createdSaleId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Record sale (game in development, expect 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"game_id\": {{draftingGameId}},\n  \"units\": 1,\n  \"unit_price_cents\": 999,\n  \"region\": \"asia\",\n  \"platform\": \"pc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "{{draftingGameId}} defaults to 6 (in development in the seed data)."
+          }
+        },
+        {
+          "name": "Record sale (unknown game, expect 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"game_id\": 99999,\n  \"units\": 1,\n  \"unit_price_cents\": 999,\n  \"region\": \"asia\",\n  \"platform\": \"pc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Record sale (invalid, expect 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"game_id\": {{releasedGameId}},\n  \"units\": 0,\n  \"unit_price_cents\": 19.99,\n  \"region\": \"mars\",\n  \"platform\": \"pc\",\n  \"sold_at\": \"2099-01-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Record batch (invalid item, nothing saved, expect 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales/batch",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales",
+                "batch"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"game_id\": {{releasedGameId}},\n      \"units\": 1,\n      \"unit_price_cents\": 3999,\n      \"region\": \"asia\",\n      \"platform\": \"pc\"\n    },\n    {\n      \"game_id\": {{releasedGameId}},\n      \"units\": -5,\n      \"unit_price_cents\": 3999,\n      \"region\": \"asia\",\n      \"platform\": \"pc\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Record batch (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales/batch",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales",
+                "batch"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"game_id\": {{releasedGameId}},\n      \"units\": 1,\n      \"unit_price_cents\": 3999,\n      \"region\": \"asia\",\n      \"platform\": \"pc\",\n      \"sold_at\": \"2026-11-01T10:00:00Z\"\n    },\n    {\n      \"game_id\": {{releasedGameId}},\n      \"units\": 3,\n      \"unit_price_cents\": 3999,\n      \"region\": \"europe\",\n      \"platform\": \"pc\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "All items are saved in one transaction, or none."
+          }
+        },
+        {
+          "name": "List sales",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales?page=1&per_page=10",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List sales (filters)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales?game_id={{releasedGameId}}&region=europe&from=2026-01-01&to=2026-06-30&per_page=5",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales"
+              ],
+              "query": [
+                {
+                  "key": "game_id",
+                  "value": "{{releasedGameId}}"
+                },
+                {
+                  "key": "region",
+                  "value": "europe"
+                },
+                {
+                  "key": "from",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-06-30"
+                },
+                {
+                  "key": "per_page",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "A plain date in 'to' includes the whole day. For a time zone offset use %2B02:00 or Z."
+          }
+        },
+        {
+          "name": "List sales (invalid filter, expect 422)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales?region=mars&from=yesterday",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales"
+              ],
+              "query": [
+                {
+                  "key": "region",
+                  "value": "mars"
+                },
+                {
+                  "key": "from",
+                  "value": "yesterday"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get sale",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales/{{createdSaleId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales",
+                "{{createdSaleId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get sale (unknown id, expect 404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales/99999999",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales",
+                "99999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Report: by game",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales/reports/by-game",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales",
+                "reports",
+                "by-game"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Report: by region (one game)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales/reports/by-region?game_id={{releasedGameId}}",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales",
+                "reports",
+                "by-region"
+              ],
+              "query": [
+                {
+                  "key": "game_id",
+                  "value": "{{releasedGameId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Report: monthly (one game)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway}}/api/v1/sales/reports/monthly?game_id={{releasedGameId}}&from=2026-01-01",
+              "host": [
+                "{{gateway}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sales",
+                "reports",
+                "monthly"
+              ],
+              "query": [
+                {
+                  "key": "game_id",
+                  "value": "{{releasedGameId}}"
+                },
+                {
+                  "key": "from",
+                  "value": "2026-01-01"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health checks (direct ports)",
+      "item": [
+        {
+          "name": "developer-service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{developerUrl}}/health",
+              "host": [
+                "{{developerUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "team-service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{teamUrl}}/health",
+              "host": [
+                "{{teamUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "game-service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gameUrl}}/health",
+              "host": [
+                "{{gameUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "sales-service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{salesUrl}}/health",
+              "host": [
+                "{{salesUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        }
+      ],
+      "description": "The gateway only routes /api/v1/*, so health checks use the direct service ports."
+    }
+  ],
+  "variable": [
+    {
+      "key": "gateway",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "developerUrl",
+      "value": "http://localhost:8001"
+    },
+    {
+      "key": "teamUrl",
+      "value": "http://localhost:8002"
+    },
+    {
+      "key": "gameUrl",
+      "value": "http://localhost:8003"
+    },
+    {
+      "key": "salesUrl",
+      "value": "http://localhost:8004"
+    },
+    {
+      "key": "developerId",
+      "value": "1",
+      "description": "Existing developer used as team lead (seeded)"
+    },
+    {
+      "key": "memberDeveloperId",
+      "value": "3",
+      "description": "Existing developer used as team member (seeded)"
+    },
+    {
+      "key": "teamId",
+      "value": "1",
+      "description": "Existing team (seeded)"
+    },
+    {
+      "key": "releasedGameId",
+      "value": "1",
+      "description": "A released game (seeded)"
+    },
+    {
+      "key": "draftingGameId",
+      "value": "6",
+      "description": "A game in development (seeded)"
+    },
+    {
+      "key": "createdDeveloperId",
+      "value": ""
+    },
+    {
+      "key": "createdDeveloperEmail",
+      "value": ""
+    },
+    {
+      "key": "createdTeamId",
+      "value": ""
+    },
+    {
+      "key": "createdGameId",
+      "value": ""
+    },
+    {
+      "key": "draftGameId",
+      "value": ""
+    },
+    {
+      "key": "createdSaleId",
+      "value": ""
+    },
+    {
+      "key": "s_leadId",
+      "value": ""
+    },
+    {
+      "key": "s_memberId",
+      "value": ""
+    },
+    {
+      "key": "s_teamId",
+      "value": ""
+    },
+    {
+      "key": "s_gameId",
+      "value": ""
+    },
+    {
+      "key": "s_saleId",
+      "value": ""
+    }
+  ]
+}
